@@ -8,12 +8,14 @@
     <div class="bg-orb-8"></div>
     <div class="bg-orb-9"></div>
     <router-view />
+    <MilestoneToast />
   </a-config-provider>
 </template>
 
 <script setup>
 import { onMounted } from 'vue'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import MilestoneToast from './components/MilestoneToast.vue'
 </script>
 
 <style scoped>

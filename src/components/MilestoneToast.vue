@@ -15,11 +15,11 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { milestoneSignal, useRepay } from '../stores/repay.js'
 
-const props = defineProps({
-  progress: Number, // 0-100
-  remaining: Number
-})
+// 仅监听 store 的里程碑信号：只在"新增还款记录"跨越节点时弹出
+// 进入系统、编辑、删除、导入等场景都不触发
+const { remaining } = useRepay()
 
 const visible = ref(false)
 const title = ref('')
@@ -27,29 +27,31 @@ const sub = ref('')
 const emoji = ref('')
 const confetti = ref(false)
 
-// 记录已触发过的里程碑，避免重复
-const fired = ref(new Set())
+// 信号变化时弹出对应里程碑文案
+watch(milestoneSignal, (sig) => {
+  if (!sig) return
+  showMilestone(sig.key)
+})
 
-watch(() => [props.progress, props.remaining], checkMilestone, { immediate: false })
-
-function checkMilestone () {
-  const p = props.progress
-  const r = props.remaining
-  if (p >= 100 && !fired.value.has('100')) {
-    fired.value.add('100')
-    trigger('🎉', '全部还清！', '你和对象的 M03 款项已结清', true)
-  } else if (r > 0 && r < 10000 && !fired.value.has('10k')) {
-    fired.value.add('10k')
-    trigger('🔥', '还剩不到一万！', `剩余 ¥${r.toFixed(0)}，胜利在望`, false)
-  } else if (p >= 75 && !fired.value.has('75')) {
-    fired.value.add('75')
-    trigger('🌟', '已过 75%', '最后冲刺阶段', false)
-  } else if (p >= 50 && !fired.value.has('50')) {
-    fired.value.add('50')
-    trigger('💪', '已还过半', '进度过半，继续加油', false)
-  } else if (p >= 25 && !fired.value.has('25')) {
-    fired.value.add('25')
-    trigger('✨', '已还 25%', '开了个好头', false)
+function showMilestone (key) {
+  switch (key) {
+    case '100':
+      trigger('🎉', '全部还清！', '你和对象的 M03 款项已结清', true)
+      break
+    case '10k':
+      trigger('🔥', '还剩不到一万！', `剩余 ¥${remaining.value.toFixed(0)}，胜利在望`, false)
+      break
+    case '75':
+      trigger('🌟', '已过 75%', '最后冲刺阶段', false)
+      break
+    case '50':
+      trigger('💪', '已还过半', '进度过半，继续加油', false)
+      break
+    case '25':
+      trigger('✨', '已还 25%', '开了个好头', false)
+      break
+    default:
+      break
   }
 }
 

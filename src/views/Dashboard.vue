@@ -36,7 +36,6 @@
         </div>
       </div>
     </div>
-    <MilestoneToast :progress="progress" :remaining="remaining" />
     <PaymentModal
       :open="modalOpen"
       :record="null"
@@ -53,7 +52,6 @@ import { message } from 'ant-design-vue'
 import AppShell from '../components/AppShell.vue'
 import StatCard from '../components/StatCard.vue'
 import ProgressOverview from '../components/ProgressOverview.vue'
-import MilestoneToast from '../components/MilestoneToast.vue'
 import PaymentModal from '../components/PaymentModal.vue'
 import { useRepay } from '../stores/repay.js'
 import { formatMoney, getSortTime, formatTimeShort } from '../utils/format.js'
