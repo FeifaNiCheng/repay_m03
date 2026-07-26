@@ -50,7 +50,7 @@
           仓库：{{ giteeConfig.owner }}/{{ giteeConfig.repo }}<br/>
           路径：{{ giteeConfig.path }}
         </p>
-        <p v-if="!giteeConfig.configured" class="hint warn-text">Gitee 未配置，请在项目 .env 文件中填写令牌信息。</p>
+        <p v-if="!giteeConfig.configured" class="hint warn-text">Gitee 未配置，请联系管理员检查内置配置。</p>
         <div v-if="syncStatus" class="sync-status">{{ syncStatus }}</div>
        <div class="btn-group">
          <a-button type="primary" :loading="syncing" @click="doSync">双向同步</a-button>
@@ -153,7 +153,7 @@ async function doImport (file) {
 
 // Gitee 双向同步：拉取 -> 合并 -> 写入本地 -> 推送
 async function doSync () {
-  if (!isGiteeConfigured()) { message.error('Gitee 未配置，请检查 .env 文件'); return }
+  if (!isGiteeConfigured()) { message.error('Gitee 未配置，请检查内置配置'); return }
   syncing.value = true
   syncStatus.value = '正在拉取远程数据...'
   try {

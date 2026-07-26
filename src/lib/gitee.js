@@ -1,10 +1,11 @@
 // Gitee 同步模块：从 Gitee 仓库拉取/推送 JSON 备份
 // 使用 Gitee API v5，支持 CORS
 
-const OWNER = import.meta.env.VITE_GITEE_OWNER
-const REPO = import.meta.env.VITE_GITEE_REPO
-const PATH = import.meta.env.VITE_GITEE_PATH || 'repay-backup.json'
-const TOKEN = import.meta.env.VITE_GITEE_TOKEN
+// Gitee 仓库配置：直接硬编码，不再读取 .env 文件
+const OWNER = 'gbmom'
+const REPO = 'repay-m03-data'
+const PATH = 'data/repay-backup.json'
+const TOKEN = '91698f3cc73f9b8ee0f6e1bc02db5a9a'
 
 const API_BASE = 'https://gitee.com/api/v5/repos'
 
