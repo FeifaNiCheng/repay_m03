@@ -257,7 +257,7 @@ async function doPurgeDeleted () {
 .hint { font-size: var(--fs-meta); color: var(--ink-soft); margin-bottom: var(--sp-4); line-height: 1.6; }
 .warn-text { color: var(--warn); }
 .sync-status { font-size: var(--fs-meta); color: var(--accent); margin-bottom: var(--sp-3); }
-.btn-group { display: flex; gap: var(--sp-3); }
+.btn-group { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
 @media (max-width: 767px) {
   .settings-grid { grid-template-columns: 1fr; }
 }
