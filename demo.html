@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repay M03 - 还款记录</title>
+<style>
+  :root {
+    --bg-1: #E8EEF7;
+    --bg-2: #F2EAF2;
+    --glass: rgba(255,255,255,0.62);
+    --glass-strong: rgba(255,255,255,0.78);
+    --glass-border: rgba(255,255,255,0.65);
+    --ink: #1C1C2E;
+    --ink-soft: #5A5A6E;
+    --ink-faint: #9A9AAB;
+    --accent: #0A84FF;
+    --accent-soft: rgba(10,132,255,0.12);
+    --success: #34C759;
+    --success-soft: rgba(52,199,89,0.14);
+    --warn: #FF9500;
+    --warn-soft: rgba(255,149,0,0.14);
+    --gold: #FFD60A;
+    --divider: rgba(0,0,0,0.06);
+    --r-card: 18px;
+    --r-btn: 12px;
+    --ease: cubic-bezier(0.4,0,0.2,1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', sans-serif;
+    color: var(--ink);
+    line-height: 1.5;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    background-size: 200% 200%;
+    animation: bgShift 20s ease-in-out infinite;
+    padding: 24px;
+  }
+  @keyframes bgShift {
+    0%,100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+
+  /* 毛玻璃面板基类 */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--r-card);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+  }
+
+  /* 顶栏 */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px; margin-bottom: 20px;
+  }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 10px rgba(10,132,255,0.4);
+  }
+  .brand h1 { font-size: var(--fs-title,17px); font-weight: 600; letter-spacing: -0.01em; }
+  .brand small { color: var(--ink-soft); font-size: 12px; }
+  .user-chip {
+    display:flex; align-items:center; gap:8px; font-size: 13px; color: var(--ink-soft);
+  }
+  .user-chip .av {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #409CFF);
+    color: #fff; display:flex; align-items:center; justify-content:center;
+    font-size: 12px; font-weight: 600;
+  }
+
+  /* 概览区：统计卡 + 进度条 紧凑并排 */
+  .overview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card { padding: 16px; min-height: 96px; display:flex; flex-direction:column; justify-content:space-between; }
+  .stat-card .label { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+  .stat-card .value {
+    font-size: 30px; font-weight: 700; line-height: 1.15;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  }
+  .stat-card .unit { font-size: 13px; font-weight: 400; color: var(--ink-soft); margin-left: 2px; }
+  .stat-card.paid .value { color: var(--success); }
+  .stat-card.remain .value { color: var(--warn); }
+  .stat-card.pct .value { color: var(--accent); }
+
+  /* 进度条面板 */
+  .progress-panel { padding: 16px; }
+  .progress-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 12px; }
+  .progress-head .pt { font-size: 13px; color: var(--ink-soft); font-weight: 500; }
+  .progress-head .pv { font-size: 12px; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .progress-track { height: 10px; background: rgba(0,0,0,0.05); border-radius: 9999px; overflow:hidden; position:relative; }
+  .progress-fill {
+    height: 100%; border-radius: 9999px; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    transition: width 1.2s var(--ease);
+    animation: breathe 3s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%,100% { box-shadow: 0 0 6px rgba(10,132,255,0.25); }
+    50% { box-shadow: 0 0 14px rgba(52,199,89,0.45); }
+  }
+  .progress-foot { display:flex; justify-content:space-between; margin-top: 10px; font-size: 11px; color: var(--ink-faint); }
+  .milestone-chip {
+    display:inline-flex; align-items:center; gap:4px; font-size:11px;
+    background: rgba(255,214,10,0.18); color: #B89000;
+    padding: 2px 8px; border-radius: 9999px; margin-top: 8px; font-weight: 500;
+  }
+
+  /* 列表区 */
+  .list-section { padding: 16px; }
+  .list-head { display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; flex-wrap:wrap; gap:8px; }
+  .list-head h2 { font-size: 17px; font-weight: 600; }
+  .list-tools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn {
+    border:none; cursor:pointer; font-family:inherit; font-size: 14px;
+    padding: 8px 14px; border-radius: var(--r-btn); transition: all 180ms var(--ease);
+    display:inline-flex; align-items:center; gap:6px; font-weight: 500;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color:#fff; box-shadow: 0 2px 8px rgba(10,132,255,0.3); }
+  .btn-primary:hover { background: #006FE0; box-shadow: 0 4px 12px rgba(10,132,255,0.4); }
+  .btn-ghost { background: transparent; color: var(--ink); }
+  .btn-ghost:hover { background: var(--accent-soft); }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .search {
+    background: rgba(255,255,255,0.5); border: 1px solid var(--glass-border);
+    color: var(--ink); padding: 7px 12px; border-radius: var(--r-btn);
+    font-size: 13px; font-family:inherit; width: 160px; transition: all 180ms var(--ease);
+  }
+  .search::placeholder { color: var(--ink-faint); }
+  .search:focus { outline:none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background:#fff; }
+
+  /* 月分组 */
+  .month-group { margin-bottom: 16px; }
+  .month-label {
+    font-size: 13px; color: var(--ink-soft); font-weight: 500;
+    padding: 6px 4px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .month-label .ms { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* 明细行 */
+  .pay-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 16px; margin-top: 6px; position:relative; overflow:hidden;
+    transition: all 180ms var(--ease);
+  }
+  .pay-row:hover { background: rgba(255,255,255,0.75); }
+  .pay-row.new { animation: slideIn 0.2s var(--ease); }
+  .pay-row.new::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background: var(--accent); animation: fadeBar 2s forwards;
+  }
+  @keyframes slideIn { from { transform:translateY(-12px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+  @keyframes fadeBar { 0%,30% { opacity:1; } 100% { opacity:0; } }
+  .pay-left { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
+  .pay-date { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .pay-note { font-size: 13px; color: var(--ink-soft); display:flex; align-items:center; gap:6px; }
+  .pay-right { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+  .pay-amount { font-size: 17px; font-weight: 700; color: var(--success); font-variant-numeric: tabular-nums; }
+  .pay-by { font-size: 11px; color: var(--ink-faint); }
+  .tag-hist { font-size: 11px; background: var(--warn-soft); color: var(--warn); padding: 1px 7px; border-radius: 9999px; }
+  .row-actions { display:flex; gap:4px; margin-left:8px; opacity:0; transition: opacity 180ms var(--ease); }
+  .pay-row:hover .row-actions { opacity:1; }
+  .icon-btn {
+    width:30px; height:30px; border-radius:8px; border:none; cursor:pointer;
+    background: transparent; color: var(--ink-soft); display:flex; align-items:center; justify-content:center;
+    font-size: 14px; transition: all 180ms var(--ease);
+  }
+  .icon-btn:hover { background: var(--accent-soft); color: var(--accent); }
+  .icon-btn.del:hover { background: rgba(255,59,48,0.12); color: #FF3B30; }
+
+  /* 快捷标签 */
+  .quick-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top: 10px; }
+  .qtag {
+    font-size: 12px; color: var(--accent); background: var(--accent-soft);
+    padding: 4px 10px; border-radius: 9999px; cursor:pointer;
+    transition: all 180ms var(--ease); font-weight: 500;
+  }
+  .qtag:hover { background: var(--accent); color:#fff; transform: translateY(-1px); }
+
+  /* 模态 */
+  .mask {
+    position:fixed; inset:0; background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display:none; align-items:center; justify-content:center; z-index:100;
+  }
+  .mask.show { display:flex; }
+  .mask.show .modal { animation: modalIn 0.2s var(--ease); }
+  @keyframes modalIn { from { transform:scale(0.95); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .modal {
+    background: var(--glass-strong);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px; padding: 24px; width: 90%; max-width: 400px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+  }
+  .modal h3 { font-size: 17px; font-weight: 600; margin-bottom: 18px; }
+  .field { margin-bottom: 14px; }
+  .field label { display:block; font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; font-weight: 500; }
+  .field input {
+    width:100%; background: rgba(255,255,255,0.6); border: 1px solid var(--glass-border);
+    color: var(--ink); padding: 10px 14px; border-radius: var(--r-btn);
+    font-size: 15px; font-family:inherit; transition: all 180ms var(--ease);
+  }
+  .field input::placeholder { color: var(--ink-faint); }
+  .field input:focus { outline:none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background:#fff; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top: 20px; }
+
+  /* 里程碑 */
+  .milestone {
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    z-index:200; pointer-events:none;
+  }
+  .milestone.show { display:flex; }
+  .ms-text {
+    font-size: 42px; font-weight: 700; color: var(--gold);
+    text-shadow: 0 0 24px rgba(255,214,10,0.5);
+    animation: msPop 0.5s var(--ease);
+  }
+  @keyframes msPop { from { transform:scale(0.6); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+  /* 演示浮动条 */
+  .demo-bar { position:fixed; bottom:16px; right:16px; display:flex; gap:6px; z-index:50; }
+  .demo-bar .btn { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+  @media (max-width: 768px) {
+    body { padding: 16px; }
+    .overview { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .pay-row { flex-direction: row; }
+    .search { width: 120px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 顶栏 -->
+  <div class="topbar glass">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <div>
+        <h1>Repay M03</h1>
+        <small>小鹏 MONA M03 Max · 还款记录</small>
+      </div>
+    </div>
+    <div class="user-chip">
+      <div class="av">仙</div>
+      <span>仙人 · xrz</span>
+    </div>
+  </div>
+
+  <!-- 概览区 -->
+  <div class="overview">
+    <div class="stats">
+      <div class="stat-card glass">
+        <div class="label">总欠款</div>
+        <div class="value" data-target="73500">0<span class="unit">元</span></div>
+      </div>
+      <div class="stat-card paid glass">
+        <div class="label">已还</div>
+        <div class="value" data-target="39500" id="paidVal">0<span class="unit">元</span></div>
+      </div>
+      <div class="stat-card remain glass">
+        <div class="label">剩余</div>
+        <div class="value" data-target="34000" id="remainVal">0<span class="unit">元</span></div>
+      </div>
+      <div class="stat-card pct glass">
+        <div class="label">还清进度</div>
+        <div class="value" data-target="53.7" data-suffix="%">0</div>
+      </div>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="progress-panel glass">
+      <div class="progress-head">
+        <span class="pt">还款进度</span>
+        <span class="pv"><span id="pctText">0</span>% · 剩余 ¥34,000</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="fill"></div>
+      </div>
+      <div class="progress-foot">
+        <span>2025-08 · 开始还款</span>
+        <span>还清即结束</span>
+      </div>
+      <div class="milestone-chip">✦ 已过半程，继续加油</div>
+    </div>
+  </div>
+
+  <!-- 明细列表 -->
+  <div class="list-section glass">
+    <div class="list-head">
+      <h2>还款明细</h2>
+      <div class="list-tools">
+        <input class="search" placeholder="搜索备注…" id="search">
+        <button class="btn btn-ghost btn-sm" id="sortBtn">倒序 ↓</button>
+        <button class="btn btn-primary btn-sm" id="addBtn">+ 记一笔</button>
+      </div>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<!-- 新增/编辑模态 -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <h3>新增还款</h3>
+    <div class="field">
+      <label>还款日期</label>
+      <input type="date" id="fDate" value="2026-07-26">
+    </div>
+    <div class="field">
+      <label>还款金额（元）</label>
+      <input type="number" id="fAmount" placeholder="输入金额" autofocus>
+    </div>
+    <div class="field">
+      <label>备注</label>
+      <input type="text" id="fNote" placeholder="选填，可自由输入">
+      <div class="quick-tags">
+        <span class="qtag">工资上缴</span>
+        <span class="qtag">微信转账</span>
+        <span class="qtag">支付宝</span>
+        <span class="qtag">现金</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitPay()">确认记录</button>
+    </div>
+  </div>
+</div>
+
+<!-- 里程碑 -->
+<div class="milestone" id="milestone">
+  <div class="ms-text" id="msText">已过半程</div>
+</div>
+
+<!-- 演示按钮 -->
+<div class="demo-bar">
+  <button class="btn btn-ghost btn-sm" onclick="showMilestone('已过半程')">演示·里程碑</button>
+  <button class="btn btn-ghost btn-sm" onclick="showMilestone('债务清零',true)">演示·还清</button>
+</div>
+
+<script>
+  var total = 73500, paid = 39500, remain = 34000;
+  var records = [
+    { date: '2026-03-15', amount: 3000, note: '工资上缴', by: '仙人', hist: false },
+    { date: '2026-02-20', amount: 2000, note: '微信转账', by: '大帅', hist: false },
+    { date: '2026-01-15', amount: 3000, note: '工资上缴', by: '仙人', hist: false },
+    { date: '2025-08-01', amount: 31500, note: '历史合计 8月前', by: '管理员', hist: true }
+  ];
+  var desc = true;
+
+  function fmt(n) { return n.toLocaleString('zh-CN'); }
+
+  function countUp(el, target) {
+    var dur = 800, t0 = performance.now();
+    function step(now) {
+      var p = Math.min((now - t0) / dur, 1);
+      var v = target * (1 - Math.pow(1 - p, 3));
+      el.firstChild.textContent = Number.isInteger(target) ? Math.round(v).toLocaleString('zh-CN') : v.toFixed(1);
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function renderStats() {
+    document.querySelectorAll('.stat-card .value').forEach(function(el) {
+      countUp(el, parseFloat(el.dataset.target));
+    });
+  }
+
+  function renderProgress(pct) {
+    document.getElementById('fill').style.width = pct + '%';
+    var target = pct, t0 = performance.now();
+    function step(now) {
+      var pr = Math.min((now - t0) / 1200, 1);
+      document.getElementById('pctText').textContent = (target * (1 - Math.pow(1 - pr, 3))).toFixed(1);
+      if (pr < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function groupByMonth(arr) {
+    var g = {};
+    arr.forEach(function(r) { var m = r.date.slice(0,7); (g[m] = g[m] || []).push(r); });
+    return Object.keys(g).sort(function(a,b){ return desc ? b.localeCompare(a) : a.localeCompare(b); }).map(function(k){ return [k, g[k]]; });
+  }
+
+  function renderList(isNew) {
+    var sorted = records.slice().sort(function(a,b){ return desc ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date); });
+    var q = document.getElementById('search').value.trim().toLowerCase();
+    if (q) sorted = sorted.filter(function(r){ return r.note.toLowerCase().indexOf(q) >= 0; });
+    var groups = groupByMonth(sorted);
+    var html = '';
+    groups.forEach(function(pair) {
+      var m = pair[0], items = pair[1];
+      var sum = items.reduce(function(s,r){ return s + r.amount; }, 0);
+      html += '<div class="month-group"><div class="month-label"><span>' + m + '</span><span class="ms">合计 ¥' + fmt(sum) + '</span></div>';
+      items.forEach(function(r) {
+        var newest = isNew && r === sorted[0] ? 'new' : '';
+        html += '<div class="pay-row ' + newest + '">';
+        html += '<div class="pay-left"><div class="pay-date">' + r.date + '</div><div class="pay-note">' + r.note + (r.hist ? '<span class="tag-hist">历史</span>' : '') + '</div></div>';
+        html += '<div class="pay-right"><div class="pay-amount">+' + fmt(r.amount) + '</div><div class="pay-by">记录人 · ' + r.by + '</div></div>';
+        html += '<div class="row-actions"><button class="icon-btn" title="编辑">✎</button><button class="icon-btn del" title="删除">✕</button></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    document.getElementById('list').innerHTML = html;
+  }
+
+  function openModal() {
+    document.getElementById('mask').classList.add('show');
+    setTimeout(function() { document.getElementById('fAmount').focus(); }, 100);
+  }
+  function closeModal() { document.getElementById('mask').classList.remove('show'); }
+
+  function submitPay() {
+    var amount = parseFloat(document.getElementById('fAmount').value);
+    var date = document.getElementById('fDate').value;
+    var note = document.getElementById('fNote').value || '还款';
+    if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
+    if (amount > remain) { alert('金额超过剩余欠款'); return; }
+    records.unshift({ date: date, amount: amount, note: note, by: '仙人', hist: false });
+    paid += amount; remain -= amount;
+    closeModal();
+    document.getElementById('fAmount').value = '';
+    document.getElementById('fNote').value = '';
+    document.getElementById('paidVal').firstChild.textContent = fmt(paid);
+    document.getElementById('remainVal').firstChild.textContent = fmt(remain);
+    var pct = (paid / total * 100);
+    renderProgress(pct);
+    renderList(true);
+  }
+
+  function showMilestone(text, clear) {
+    var ms = document.getElementById('milestone');
+    document.getElementById('msText').textContent = text;
+    ms.classList.add('show');
+    if (clear) { launchParticles(); }
+    setTimeout(function() { ms.classList.remove('show'); }, clear ? 3000 : 2000);
+  }
+
+  function launchParticles() {
+    for (var i = 0; i < 60; i++) {
+      var p = document.createElement('div');
+      p.style.cssText = 'position:fixed;width:8px;height:8px;border-radius:50%;background:#FFD60A;left:50%;bottom:30%;z-index:201;pointer-events:none;';
+      document.body.appendChild(p);
+      var ang = Math.random() * Math.PI - Math.PI/2;
+      var dist = 200 + Math.random() * 300;
+      p.animate([
+        { transform: 'translate(0,0) scale(1)', opacity: 1 },
+        { transform: 'translate(' + Math.cos(ang)*dist + 'px,' + (-Math.abs(Math.sin(ang))*dist) + 'px) scale(0)', opacity: 0 }
+      ], { duration: 1500 + Math.random()*1000, easing: 'cubic-bezier(0.2,0.7,0.3,1)' });
+      (function(node){ setTimeout(function(){ node.remove(); }, 2600); })(p);
+    }
+  }
+
+  document.getElementById('addBtn').onclick = openModal;
+  document.getElementById('sortBtn').onclick = function() {
+    desc = !desc;
+    this.textContent = desc ? '倒序 ↓' : '正序 ↑';
+    renderList(false);
+  };
+  document.getElementById('search').oninput = function() { renderList(false); };
+  document.querySelectorAll('.qtag').forEach(function(t) {
+    t.onclick = function() { document.getElementById('fNote').value = t.textContent; };
+  });
+
+  window.addEventListener('load', function() {
+    renderStats();
+    setTimeout(function() { renderProgress(53.7); }, 100);
+    renderList(false);
+  });
+</script>
+</body>
+</html>

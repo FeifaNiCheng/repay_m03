@@ -1,0 +1,110 @@
+import db from './database.js'
+
+// ===== 账户相关 =====
+
+// 初始化种子数据（仅在库为空时写入）
+export async function seedIfNeeded () {
+  const userCount = await db.users.count()
+  if (userCount === 0) {
+    await db.users.bulkAdd([
+      { username: 'admin', nickname: '管理员', password: 'admin123' },
+      { username: 'xrz', nickname: '仙人', password: 'admin123' },
+      { username: 'ds', nickname: '大帅', password: 'admin123' }
+    ])
+  }
+  const payCount = await db.payments.count()
+  if (payCount === 0) {
+    // 历史合计还款记录，操作人 admin
+    await db.payments.add({
+      date: '2025-08-01',
+      amount: 39500,
+      note: '历史合计 2025-08',
+      createdBy: 'admin',
+      createdAt: new Date().toISOString()
+    })
+  }
+}
+
+// 登录校验
+export async function login (username, password) {
+  const user = await db.users.get(username)
+  if (!user) return null
+  if (user.password !== password) return null
+  return { username: user.username, nickname: user.nickname }
+}
+
+// 获取全部用户（设置页用）
+export async function getAllUsers () {
+  return db.users.toArray()
+}
+
+// 修改昵称
+export async function updateNickname (username, nickname) {
+  await db.users.update(username, { nickname })
+}
+
+// 修改密码
+export async function updatePassword (username, oldPassword, newPassword) {
+  const user = await db.users.get(username)
+  if (!user || user.password !== oldPassword) {
+    return false
+  }
+  await db.users.update(username, { password: newPassword })
+  return true
+}
+
+// ===== 还款记录相关 =====
+
+export async function getAllPayments () {
+  return db.payments.orderBy('date').toArray()
+}
+
+export async function addPayment (data) {
+  return db.payments.add({
+    date: data.date,
+    amount: data.amount,
+    note: data.note || '',
+    createdBy: data.createdBy,
+    createdAt: new Date().toISOString()
+  })
+}
+
+export async function updatePayment (id, data) {
+  await db.payments.update(id, {
+    date: data.date,
+    amount: data.amount,
+    note: data.note || ''
+  })
+}
+
+export async function deletePayment (id) {
+  await db.payments.delete(id)
+}
+
+// ===== 导入导出 =====
+
+export async function exportData () {
+  const users = await db.users.toArray()
+  const payments = await db.payments.toArray()
+  return {
+    app: 'repay-m03',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    users,
+    payments
+  }
+}
+
+// 导入：覆盖式写入，校验结构
+export async function importData (json) {
+  if (!json || json.app !== 'repay-m03' || !Array.isArray(json.users) || !Array.isArray(json.payments)) {
+    throw new Error('备份文件格式不正确')
+  }
+  await db.transaction('rw', db.users, db.payments, async () => {
+    await db.users.clear()
+    await db.payments.clear()
+    await db.users.bulkAdd(json.users)
+    await db.payments.bulkAdd(json.payments)
+  })
+  return { users: json.users.length, payments: json.payments.length }
+}

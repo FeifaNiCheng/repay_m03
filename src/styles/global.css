@@ -1,0 +1,167 @@
+/* ===== 设计令牌（来自 .rule/design.md） ===== */
+:root {
+  --bg-gradient-1: #E8EEF7;
+  --bg-gradient-2: #F2EAF2;
+  --glass: rgba(255,255,255,0.62);
+  --glass-strong: rgba(255,255,255,0.78);
+  --glass-border: rgba(255,255,255,0.65);
+  --ink: #1C1C2E;
+  --ink-soft: #5A5A6E;
+  --ink-faint: #9A9AAB;
+  --accent: #0A84FF;
+  --accent-soft: rgba(10,132,255,0.12);
+  --success: #34C759;
+  --success-soft: rgba(52,199,89,0.14);
+  --warn: #FF9500;
+  --warn-soft: rgba(255,149,0,0.14);
+  --gold: #FFD60A;
+  --divider: rgba(0,0,0,0.06);
+  --fs-display: 30px;
+  --fs-title: 17px;
+  --fs-body: 15px;
+  --fs-meta: 13px;
+  --fs-label: 12px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 28px;
+  --r-card: 18px;
+  --r-btn: 12px;
+  --ease: cubic-bezier(0.4,0,0.2,1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, 'SF Pro Text', 'PingFang SC', 'Helvetica Neue', sans-serif;
+  font-size: var(--fs-body);
+  color: var(--ink);
+  line-height: 1.5;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+  background-size: 200% 200%;
+  animation: bgShift 20s ease-in-out infinite;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 背景装饰光斑：为毛玻璃面板提供折射底色，增强通透层次感 */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  pointer-events: none;
+}
+body::before {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, rgba(10,132,255,0.22), transparent 70%);
+  top: -80px; right: -60px;
+  animation: orbFloat1 22s ease-in-out infinite;
+}
+body::after {
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(255,149,0,0.16), transparent 70%);
+  bottom: -60px; left: -40px;
+  animation: orbFloat2 26s ease-in-out infinite;
+}
+
+/* 额外紫色光斑，独立元素实现三色层次 */
+.bg-orb-3 {
+  position: fixed;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(175,82,222,0.18), transparent 70%);
+  filter: blur(70px);
+  top: 40%; left: 30%;
+  z-index: -1;
+  pointer-events: none;
+  animation: orbFloat3 30s ease-in-out infinite;
+}
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(-30px, 40px) scale(1.1); }
+}
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.15); }
+}
+@keyframes orbFloat3 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(50px, -20px) scale(1.1); }
+  66% { transform: translate(-30px, 30px) scale(0.95); }
+}
+@keyframes bgShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-card);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+}
+.glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-card);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+}
+.num { font-variant-numeric: tabular-nums; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+/* ===== Ant Design Vue 覆盖 ===== */
+.ant-btn { border-radius: var(--r-btn) !important; transition: all 180ms var(--ease) !important; }
+.ant-btn-primary { background: var(--accent) !important; border-color: var(--accent) !important; }
+.ant-btn-primary:hover { background: #409CFF !important; border-color: #409CFF !important; transform: translateY(-1px); }
+.ant-input, .ant-input-affix-wrapper, .ant-picker, .ant-select-selector {
+  border-radius: var(--r-btn) !important;
+  background: rgba(255,255,255,0.5) !important;
+  border-color: var(--glass-border) !important;
+}
+.ant-input:focus, .ant-input-affix-wrapper-focused, .ant-picker-focused {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+.ant-modal-content {
+  border-radius: var(--r-card) !important;
+  background: var(--glass-strong) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12) !important;
+}
+.ant-modal-mask { background: rgba(0,0,0,0.3) !important; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ant-message-notice-content {
+  border-radius: var(--r-btn) !important;
+  background: var(--glass-strong) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+}
+/* 仪式感动效 */
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.anim-slide-up { animation: slideUp 300ms var(--ease) both; }
+@keyframes rowIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+.anim-row-in { animation: rowIn 200ms var(--ease) both; }
+@keyframes rowOut { to { opacity: 0; transform: translateX(12px); } }
+.anim-row-out { animation: rowOut 200ms var(--ease) both; }
+@keyframes milestonePop { 0% { opacity: 0; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+.anim-milestone { animation: milestonePop 500ms var(--ease) both; }
+@keyframes breathe { 0%, 100% { box-shadow: 0 0 6px rgba(10,132,255,0.25); } 50% { box-shadow: 0 0 14px rgba(52,199,89,0.45); } }
+.anim-breathe { animation: breathe 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  body { animation: none; }
+  body::before, body::after, .bg-orb-3 { display: none; }
+}
