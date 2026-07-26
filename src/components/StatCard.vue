@@ -3,11 +3,10 @@
     <div class="label">{{ label }}</div>
     <div class="value num">
       <BreathTip v-if="tip" :text="tip" placement="top">
-        <span>{{ animated ? display : formatValue }}</span>
+        <span>{{ animated ? display : formatValue }}<span v-if="suffix" class="suffix">{{ suffix }}</span></span>
       </BreathTip>
-      <span v-else>{{ animated ? display : formatValue }}</span>
+      <span v-else>{{ animated ? display : formatValue }}<span v-if="suffix" class="suffix">{{ suffix }}</span></span>
     </div>
-    <div v-if="suffix" class="suffix">{{ suffix }}</div>
   </div>
 </template>
 
@@ -53,11 +52,14 @@ onUnmounted(() => { if (raf) cancelAnimationFrame(raf) })
 </script>
 
 <style scoped>
-.stat-card { padding: var(--sp-4); min-height: 96px; display: flex; flex-direction: column; justify-content: center; }
+.stat-card { padding: var(--sp-4); min-height: 96px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 .label { font-size: var(--fs-label); color: var(--ink-soft); margin-bottom: var(--sp-1); }
-.value { font-size: var(--fs-display); font-weight: 700; line-height: 1.15; }
-.suffix { font-size: var(--fs-meta); color: var(--ink-faint); margin-top: var(--sp-1); }
+.value { font-size: var(--fs-display); font-weight: 700; line-height: 1.15; min-width: 0; white-space: nowrap; }
+.suffix { font-size: 0.6em; font-weight: 600; color: var(--ink-faint); margin-left: 2px; }
 .success .value { color: var(--success); }
 .warn .value { color: var(--warn); }
 .accent .value { color: var(--accent); }
+@media (max-width: 767px) {
+  .value { font-size: 22px; }
+}
 </style>

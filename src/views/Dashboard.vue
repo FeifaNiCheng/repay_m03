@@ -102,7 +102,7 @@ onMounted(loadPayments)
 
 <style scoped>
 .overview { display: flex; flex-direction: column; gap: var(--sp-4); margin-bottom: var(--sp-5); }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); }
 .recent { padding: var(--sp-4); }
 .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-3); }
 .section-title { font-size: var(--fs-title); font-weight: 600; }
@@ -134,6 +134,6 @@ onMounted(loadPayments)
 .row-amount { font-size: var(--fs-title); font-weight: 600; color: var(--success); }
 .row-by { font-size: var(--fs-label); color: var(--ink-faint); }
 @media (max-width: 767px) {
-  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>
