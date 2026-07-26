@@ -236,7 +236,7 @@ onMounted(loadPayments)
   background: var(--warn); border-radius: 2px;
 }
 .row-main { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.row-date { font-size: var(--fs-meta); color: var(--ink-soft); }
+.row-date { font-size: var(--fs-meta); color: var(--ink-soft); white-space: nowrap; }
 .row-note { font-size: var(--fs-body); }
 .badge-history {
   font-size: 10px; padding: 1px 6px; border-radius: 9999px;
