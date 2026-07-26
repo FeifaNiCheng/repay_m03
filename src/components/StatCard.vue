@@ -1,7 +1,12 @@
 <template>
   <div class="stat-card glass" :class="tone">
     <div class="label">{{ label }}</div>
-    <div class="value num">{{ animated ? display : formatValue }}</div>
+    <div class="value num">
+      <BreathTip v-if="tip" :text="tip" placement="top">
+        <span>{{ animated ? display : formatValue }}</span>
+      </BreathTip>
+      <span v-else>{{ animated ? display : formatValue }}</span>
+    </div>
     <div v-if="suffix" class="suffix">{{ suffix }}</div>
   </div>
 </template>
@@ -9,13 +14,15 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { formatYuan } from '../utils/format.js'
+import BreathTip from './BreathTip.vue'
 
 const props = defineProps({
   label: String,
   value: { type: Number, default: 0 },
   tone: { type: String, default: '' }, // success / warn / accent
   animated: { type: Boolean, default: true },
- suffix: String
+  suffix: String,
+  tip: { type: String, default: '' } // hover 呼吸提示文案
 })
 
 // 百分比类型不套用货币格式

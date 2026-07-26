@@ -1,9 +1,9 @@
 <template>
   <div class="shell">
     <div class="glass topbar">
-      <div class="brand">
+      <div class="brand" @click="goHome" title="返回首页">
         <span class="brand-dot"></span>
-        <div>
+        <div class="brand-text">
           <h1>Repay M03</h1>
           <small>小鹏 MONA M03 Max 还款记录</small>
         </div>
@@ -34,6 +34,10 @@ import { useAuth } from '../stores/auth.js'
 const { state, clearUser } = useAuth()
 const router = useRouter()
 
+function goHome () {
+  router.push('/dashboard')
+}
+
 function logout () {
   clearUser()
   router.push('/login')
@@ -47,6 +51,9 @@ function logout () {
   padding: 14px 18px; margin-bottom: 20px;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
+.brand { cursor: pointer; transition: opacity 180ms var(--ease); }
+.brand:hover { opacity: 0.7; }
+.brand-text { transition: opacity 180ms var(--ease); }
 .brand-dot {
   width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
   box-shadow: 0 0 10px rgba(10,132,255,0.4);
@@ -56,11 +63,15 @@ function logout () {
 .topbar-right { display: flex; align-items: center; gap: 20px; }
 .nav { display: flex; gap: 6px; }
 .nav-link {
-  font-size: var(--fs-meta); color: var(--ink-soft); text-decoration: none;
-  padding: 6px 12px; border-radius: 8px; transition: all 180ms var(--ease);
+  font-size: var(--fs-body); color: var(--ink-soft); text-decoration: none;
+  padding: 8px 18px; border-radius: 10px; font-weight: 500;
+  transition: all 180ms var(--ease);
 }
 .nav-link:hover { background: var(--accent-soft); color: var(--accent); }
-.nav-link.router-link-exact-active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nav-link.router-link-exact-active {
+  background: var(--accent-soft); color: var(--accent); font-weight: 700;
+  transform: translateY(-1px);
+}
 .user-chip { display: flex; align-items: center; gap: 8px; font-size: var(--fs-meta); color: var(--ink-soft); }
 .av {
   width: 26px; height: 26px; border-radius: 50%;
@@ -75,6 +86,6 @@ function logout () {
   .shell { padding: 16px; }
   .topbar { flex-direction: column; gap: 12px; align-items: flex-start; }
   .topbar-right { width: 100%; justify-content: space-between; }
-  .nav-link { padding: 4px 8px; }
+  .nav-link { padding: 6px 12px; font-size: var(--fs-meta); }
 }
 </style>

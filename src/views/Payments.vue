@@ -16,15 +16,24 @@
         {{ sortDesc ? '倒序 ↓' : '正序 ↑' }}
       </a-button>
       <div class="spacer"></div>
+      <a-button @click="toggleAll" class="sort-btn">{{ allExpanded ? '全部收缩' : '全部展开' }}</a-button>
       <a-button type="primary" @click="openAdd">+ 新增记录</a-button>
     </div>
 
     <div class="list-area">
       <div v-for="group in grouped" :key="group.key" class="month-group">
-        <div class="month-head glass">
+        <div class="month-head glass" @click="toggleMonth(group.key)">
+          <span class="month-toggle">{{ expandedMonths.has(group.key) ? '▾' : '▸' }}</span>
           <span class="month-title">{{ formatMonth(group.key) }}</span>
-          <span class="month-sub num">合计 ¥{{ formatMoney(group.total) }}</span>
+          <span class="month-sub num">
+            <BreathTip :text="`本月共 ${group.items.length} 笔，合计 ¥${formatMoney(group.total)}`" placement="top">
+              合计 ¥{{ formatMoney(group.total) }}
+            </BreathTip>
+          </span>
         </div>
+
+        <transition name="expand">
+        <div v-show="expandedMonths.has(group.key)" class="month-items">
         <div
           v-for="p in group.items"
           :key="p.id"
@@ -32,14 +41,16 @@
           :class="{ 'is-history': p.note && p.note.includes('历史合计') }"
         >
           <div class="row-main">
-            <span class="row-date">{{ p.date }}</span>
+            <span class="row-date">{{ formatTimeShort(p) }}</span>
             <span class="row-note">
               {{ p.note || '-' }}
               <span v-if="p.note && p.note.includes('历史合计')" class="badge-history">历史</span>
             </span>
           </div>
           <div class="row-amount-area">
-            <span class="row-amount num">¥{{ formatMoney(p.amount) }}</span>
+            <BreathTip :text="`${p.createdBy} 记录于 ${formatTimeShort(p)}`" placement="top">
+              <span class="row-amount num">¥{{ formatMoney(p.amount) }}</span>
+            </BreathTip>
             <span class="row-by">{{ p.createdBy }}</span>
           </div>
           <div class="row-actions">
@@ -49,6 +60,8 @@
             </a-popconfirm>
           </div>
         </div>
+        </div>
+        </transition>
       </div>
       <div v-if="filtered.length === 0" class="empty glass">没有匹配的记录</div>
     </div>
@@ -64,12 +77,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watchEffect } from 'vue'
 import { message } from 'ant-design-vue'
 import AppShell from '../components/AppShell.vue'
 import PaymentModal from '../components/PaymentModal.vue'
+import BreathTip from '../components/BreathTip.vue'
 import { useRepay } from '../stores/repay.js'
-import { formatMoney, formatMonth, getMonthKey } from '../utils/format.js'
+import { formatMoney, formatMonth, getMonthKey, getSortTime, formatTimeShort } from '../utils/format.js'
 
 const { state, remaining, loadPayments, addPayment, updatePayment, deletePayment } = useRepay()
 
@@ -78,6 +92,9 @@ const monthFilter = ref(undefined)
 const sortDesc = ref(true)
 const modalOpen = ref(false)
 const editingRecord = ref(null)
+// 展开的月份 key 集合
+const expandedMonths = ref(new Set())
+let initialized = false
 
 // 过滤后的记录
 const filtered = computed(() => {
@@ -89,7 +106,10 @@ const filtered = computed(() => {
   if (monthFilter.value) {
     list = list.filter(p => getMonthKey(p.date) === monthFilter.value)
   }
-  list.sort((a, b) => sortDesc.value ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date))
+  list.sort((a, b) => {
+    const ta = getSortTime(a), tb = getSortTime(b)
+    return sortDesc.value ? tb.localeCompare(ta) : ta.localeCompare(tb)
+  })
   return list
 })
 
@@ -114,7 +134,32 @@ const grouped = computed(() => {
   }))
 })
 
+// 初始化展开状态：默认最新月份展开，其他收缩
+watchEffect(() => {
+  if (!initialized && grouped.value.length > 0) {
+    expandedMonths.value = new Set([grouped.value[0].key])
+    initialized = true
+  }
+})
+
+function toggleMonth (key) {
+  const s = new Set(expandedMonths.value)
+  if (s.has(key)) s.delete(key)
+  else s.add(key)
+  expandedMonths.value = s
+}
+
 function toggleSort () { sortDesc.value = !sortDesc.value }
+
+// 一键全部展开/收缩
+const allExpanded = computed(() => grouped.value.length > 0 && grouped.value.every(g => expandedMonths.value.has(g.key)))
+function toggleAll () {
+  if (allExpanded.value) {
+    expandedMonths.value = new Set()
+  } else {
+    expandedMonths.value = new Set(grouped.value.map(g => g.key))
+  }
+}
 
 function openAdd () {
   editingRecord.value = null
@@ -163,12 +208,24 @@ onMounted(loadPayments)
 .sort-btn { font-size: var(--fs-meta); }
 .month-group { margin-bottom: var(--sp-5); }
 .month-head {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; align-items: center; gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4); margin-bottom: var(--sp-2);
   font-size: var(--fs-meta); color: var(--ink-soft);
+  cursor: pointer; user-select: none;
+  transition: background 180ms var(--ease);
 }
+.month-head:hover { background: rgba(255,255,255,0.75); }
+.month-toggle { font-size: 11px; color: var(--ink-faint); width: 14px; display: inline-block; }
 .month-title { font-weight: 600; }
-.month-sub { color: var(--ink-faint); }
+.month-sub { color: var(--ink-faint); margin-left: auto; }
+.month-items { overflow: hidden; }
+.expand-enter-active, .expand-leave-active {
+  transition: max-height 250ms var(--ease), opacity 200ms var(--ease);
+  max-height: 3000px;
+}
+.expand-enter-from, .expand-leave-to {
+  max-height: 0; opacity: 0; overflow: hidden;
+}
 .pay-row {
   display: flex; align-items: center; padding: var(--sp-3) var(--sp-4);
   margin-bottom: var(--sp-2); position: relative; transition: all 180ms var(--ease);

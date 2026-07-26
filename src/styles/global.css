@@ -1,9 +1,9 @@
 /* ===== 设计令牌（来自 .rule/design.md） ===== */
 :root {
-  --bg-gradient-1: #E8EEF7;
-  --bg-gradient-2: #F2EAF2;
-  --glass: rgba(255,255,255,0.62);
-  --glass-strong: rgba(255,255,255,0.78);
+  --bg-gradient-1: #D6E3F4;
+  --bg-gradient-2: #EFE3F2;
+  --glass: rgba(255,255,255,0.48);
+  --glass-strong: rgba(255,255,255,0.58);
   --glass-border: rgba(255,255,255,0.65);
   --ink: #1C1C2E;
   --ink-soft: #5A5A6E;
@@ -39,31 +39,40 @@ body {
   color: var(--ink);
   line-height: 1.5;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+  position: relative;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse at 20% 15%, rgba(175,82,222,0.13), transparent 50%),
+    radial-gradient(ellipse at 85% 70%, rgba(255,99,132,0.1), transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(175,82,222,0.08), transparent 60%),
+    radial-gradient(ellipse at 70% 20%, rgba(255,99,132,0.09), transparent 55%),
+    radial-gradient(ellipse at 30% 80%, rgba(175,82,222,0.08), transparent 55%),
+    linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
   background-size: 200% 200%;
-  animation: bgShift 20s ease-in-out infinite;
+  background-position: 100% 50%;
+  animation: bgShift 24s ease-in-out infinite;
   -webkit-font-smoothing: antialiased;
 }
 
-/* 背景装饰光斑：为毛玻璃面板提供折射底色，增强通透层次感 */
+/* 背景装饰光斑：七色光斑，色彩丰富才能让毛玻璃的折射效果显现出来 */
 body::before,
 body::after {
   content: '';
   position: fixed;
   border-radius: 50%;
-  filter: blur(80px);
-  z-index: -1;
+  filter: blur(50px);
+  z-index: 0;
   pointer-events: none;
 }
 body::before {
   width: 420px; height: 420px;
-  background: radial-gradient(circle, rgba(10,132,255,0.22), transparent 70%);
+  background: radial-gradient(circle, rgba(175,82,222,0.36), rgba(175,82,222,0.14) 40%, transparent 70%);
   top: -80px; right: -60px;
   animation: orbFloat1 22s ease-in-out infinite;
 }
 body::after {
   width: 360px; height: 360px;
-  background: radial-gradient(circle, rgba(255,149,0,0.16), transparent 70%);
+  background: radial-gradient(circle, rgba(255,149,0,0.38), rgba(255,149,0,0.12) 40%, transparent 70%);
   bottom: -60px; left: -40px;
   animation: orbFloat2 26s ease-in-out infinite;
 }
@@ -73,13 +82,80 @@ body::after {
   position: fixed;
   width: 300px; height: 300px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(175,82,222,0.18), transparent 70%);
-  filter: blur(70px);
+  background: radial-gradient(circle, rgba(175,82,222,0.32), rgba(175,82,222,0.1) 40%, transparent 70%);
+  filter: blur(45px);
   top: 40%; left: 30%;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   animation: orbFloat3 30s ease-in-out infinite;
 }
+.bg-orb-4 {
+  position: fixed;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(52,199,89,0.26), rgba(52,199,89,0.08) 40%, transparent 70%);
+  filter: blur(45px);
+  top: 55%; right: 15%;
+  z-index: 0;
+  pointer-events: none;
+  animation: orbFloat4 28s ease-in-out infinite;
+}
+.bg-orb-5 {
+  position: fixed;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,99,132,0.24), rgba(255,99,132,0.07) 40%, transparent 70%);
+  filter: blur(40px);
+  top: 15%; left: 55%;
+  z-index: 0;
+  pointer-events: none;
+  animation: orbFloat5 24s ease-in-out infinite;
+}
+.bg-orb-6 {
+  position: fixed;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,199,213,0.2), transparent 70%);
+  filter: blur(40px);
+  top: 70%; left: 20%;
+  z-index: 0;
+  pointer-events: none;
+  animation: orbFloat6 27s ease-in-out infinite;
+}
+.bg-orb-7 {
+  position: fixed;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,210,10,0.16), transparent 70%);
+  filter: blur(38px);
+  top: 30%; right: 35%;
+  z-index: 0;
+  pointer-events: none;
+  animation: orbFloat7 25s ease-in-out infinite;
+}
+.bg-orb-8 {
+  position: fixed;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,45,85,0.2), rgba(255,45,85,0.06) 40%, transparent 70%);
+  filter: blur(42px);
+  top: 60%; left: 8%;
+  z-index: 0;
+  pointer-events: none;
+  animation: orbFloat8 29s ease-in-out infinite;
+}
+.bg-orb-9 {
+  position: fixed;
+  width: 210px; height: 210px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(88,86,214,0.22), rgba(88,86,214,0.07) 40%, transparent 70%);
+  filter: blur(40px);
+  top: 5%; left: 10%;
+  z-index: 0;
+  pointer-events: none;
+  animation: orbFloat9 26s ease-in-out infinite;
+}
+.glass, .glass-strong { position: relative; z-index: 1; }
 @keyframes orbFloat1 {
   0%, 100% { transform: translate(0,0) scale(1); }
   50% { transform: translate(-30px, 40px) scale(1.1); }
@@ -93,22 +169,57 @@ body::after {
   33% { transform: translate(50px, -20px) scale(1.1); }
   66% { transform: translate(-30px, 30px) scale(0.95); }
 }
+@keyframes orbFloat4 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(-40px, -25px) scale(1.12); }
+}
+@keyframes orbFloat5 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  40% { transform: translate(25px, 35px) scale(1.08); }
+  70% { transform: translate(-20px, -15px) scale(0.92); }
+}
+@keyframes orbFloat6 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(30px, -35px) scale(1.15); }
+}
+@keyframes orbFloat7 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(-35px, 20px) scale(1.1); }
+  66% { transform: translate(20px, -25px) scale(0.9); }
+}
+@keyframes orbFloat8 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(35px, -28px) scale(1.12); }
+}
+@keyframes orbFloat9 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(28px, 22px) scale(0.92); }
+  66% { transform: translate(-18px, -18px) scale(1.1); }
+}
 @keyframes bgShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%, 100% { background-position: 100% 50%; }
+  50% { background-position: 0% 50%; }
 }
 .glass {
   background: var(--glass);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px, auto;
+  background-blend-mode: soft-light, normal;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
   border: 1px solid var(--glass-border);
   border-radius: var(--r-card);
   box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
 }
 .glass-strong {
   background: var(--glass-strong);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px, auto;
+  background-blend-mode: soft-light, normal;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
   border: 1px solid var(--glass-border);
   border-radius: var(--r-card);
   box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
@@ -123,7 +234,7 @@ body::after {
 .ant-btn-primary:hover { background: #409CFF !important; border-color: #409CFF !important; transform: translateY(-1px); }
 .ant-input, .ant-input-affix-wrapper, .ant-picker, .ant-select-selector {
   border-radius: var(--r-btn) !important;
-  background: rgba(255,255,255,0.5) !important;
+  background: rgba(255,255,255,0.32) !important;
   border-color: var(--glass-border) !important;
 }
 .ant-input:focus, .ant-input-affix-wrapper-focused, .ant-picker-focused {
@@ -163,5 +274,5 @@ body::after {
     transition-duration: 0.01ms !important;
   }
   body { animation: none; }
-  body::before, body::after, .bg-orb-3 { display: none; }
+  body::before, body::after, .bg-orb-3, .bg-orb-4, .bg-orb-5, .bg-orb-6, .bg-orb-7, .bg-orb-8, .bg-orb-9 { display: none; }
 }

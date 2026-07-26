@@ -20,7 +20,7 @@ export async function seedIfNeeded () {
       amount: 39500,
       note: '历史合计 2025-08',
       createdBy: 'admin',
-      createdAt: new Date().toISOString()
+     createdAt: new Date().toISOString()
     })
   }
 }
@@ -40,7 +40,7 @@ export async function getAllUsers () {
 
 // 修改昵称
 export async function updateNickname (username, nickname) {
-  await db.users.update(username, { nickname })
+  await db.users.update(username, { nickname, updatedAt: new Date().toISOString() })
 }
 
 // 修改密码
@@ -49,14 +49,16 @@ export async function updatePassword (username, oldPassword, newPassword) {
   if (!user || user.password !== oldPassword) {
     return false
   }
-  await db.users.update(username, { password: newPassword })
+ await db.users.update(username, { password: newPassword, updatedAt: new Date().toISOString() })
   return true
 }
 
 // ===== 还款记录相关 =====
 
 export async function getAllPayments () {
-  return db.payments.orderBy('date').toArray()
+  // 过滤掉软删除的记录
+  const all = await db.payments.orderBy('date').toArray()
+  return all.filter(p => !p.deleted)
 }
 
 export async function addPayment (data) {
@@ -65,7 +67,8 @@ export async function addPayment (data) {
     amount: data.amount,
     note: data.note || '',
     createdBy: data.createdBy,
-    createdAt: new Date().toISOString()
+   createdAt: new Date().toISOString(),
+   updatedAt: new Date().toISOString()
   })
 }
 
@@ -73,12 +76,17 @@ export async function updatePayment (id, data) {
   await db.payments.update(id, {
     date: data.date,
     amount: data.amount,
-    note: data.note || ''
+   note: data.note || '',
+   updatedAt: new Date().toISOString()
   })
 }
 
 export async function deletePayment (id) {
-  await db.payments.delete(id)
+  // 软删除：标记 deleted + updatedAt，同步时其他设备才能感知到删除
+  await db.payments.update(id, {
+    deleted: true,
+    updatedAt: new Date().toISOString()
+  })
 }
 
 // ===== 导入导出 =====
@@ -89,7 +97,7 @@ export async function exportData () {
   return {
     app: 'repay-m03',
     version: 1,
-    exportedAt: new Date().toISOString(),
+   exportedAt: new Date().toISOString(),
     users,
     payments
   }
@@ -103,8 +111,8 @@ export async function importData (json) {
   await db.transaction('rw', db.users, db.payments, async () => {
     await db.users.clear()
     await db.payments.clear()
-    await db.users.bulkAdd(json.users)
-    await db.payments.bulkAdd(json.payments)
+   await db.users.bulkAdd(json.users)
+   await db.payments.bulkAdd(json.payments)
   })
   return { users: json.users.length, payments: json.payments.length }
 }

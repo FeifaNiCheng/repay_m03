@@ -66,7 +66,11 @@ const amountInput = ref(null)
 
 const amountError = computed(() => {
   if (form.amount === '') return ''
-  return validateAmount(form.amount, props.remaining)
+  // 编辑时，当前记录的金额已在 paid 中，校验上限要加回原金额
+  const effectiveRemaining = editing.value
+    ? props.remaining + Number(props.record?.amount || 0)
+    : props.remaining
+  return validateAmount(form.amount, effectiveRemaining)
 })
 
 watch(() => props.open, (v) => {
@@ -88,7 +92,10 @@ watch(() => props.open, (v) => {
 })
 
 function submit () {
-  const err = validateAmount(form.amount, props.remaining)
+  const effectiveRemaining = editing.value
+    ? props.remaining + Number(props.record?.amount || 0)
+    : props.remaining
+  const err = validateAmount(form.amount, effectiveRemaining)
   if (err) { message.error(err); return }
   if (!form.date) { message.error('请选择日期'); return }
   emit('save', {

@@ -35,13 +35,28 @@
       <!-- 数据管理 -->
       <div class="glass card">
         <div class="card-title">数据管理</div>
-        <p class="hint">数据存储在本地浏览器（IndexedDB），可导出为 JSON 备份，用于跨设备迁移。</p>
+       <p class="hint">数据存储在本地浏览器（IndexedDB），可导出为 JSON 备份，用于跨设备迁移。</p>
         <div class="btn-group">
           <a-button @click="doExport">导出备份</a-button>
           <a-upload :showUploadList="false" :before-upload="doImport" accept=".json">
             <a-button>导入备份</a-button>
           </a-upload>
         </div>
+      </div>
+      <!-- Gitee 云同步 -->
+      <div class="glass card">
+        <div class="card-title">云同步</div>
+        <p class="hint">
+          仓库：{{ giteeConfig.owner }}/{{ giteeConfig.repo }}<br/>
+          路径：{{ giteeConfig.path }}
+        </p>
+        <p v-if="!giteeConfig.configured" class="hint warn-text">Gitee 未配置，请在项目 .env 文件中填写令牌信息。</p>
+        <div v-if="syncStatus" class="sync-status">{{ syncStatus }}</div>
+       <div class="btn-group">
+         <a-button type="primary" :loading="syncing" @click="doSync">双向同步</a-button>
+         <a-button :loading="syncing" @click="doPullOnly">仅拉取</a-button>
+          <a-button :loading="syncing" @click="doPushOnly">仅推送</a-button>
+       </div>
       </div>
     </div>
 
@@ -59,6 +74,8 @@ import AppShell from '../components/AppShell.vue'
 import { useAuth } from '../stores/auth.js'
 import { useRepay } from '../stores/repay.js'
 import { getAllUsers, updateNickname, updatePassword, exportData, importData } from '../db/dao.js'
+import { isGiteeConfigured, getGiteeConfig, fetchFromGitee, pushToGitee, mergeData } from '../lib/gitee.js'
+import { schedulePush } from '../lib/autoSync.js'
 
 const { state } = useAuth()
 const { loadPayments } = useRepay()
@@ -67,6 +84,9 @@ const users = ref([])
 const nickModalOpen = ref(false)
 const nickForm = reactive({ username: '', nickname: '' })
 const pwdForm = reactive({ old: '', new: '', confirm: '' })
+const syncing = ref(false)
+const syncStatus = ref('')
+const giteeConfig = ref(getGiteeConfig())
 
 async function loadUsers () {
   users.value = await getAllUsers()
@@ -89,6 +109,7 @@ async function saveNick () {
   message.success('昵称已更新')
   nickModalOpen.value = false
   await loadUsers()
+  schedulePush()
 }
 
 async function changePwd () {
@@ -101,6 +122,7 @@ async function changePwd () {
   pwdForm.old = ''
   pwdForm.new = ''
   pwdForm.confirm = ''
+  schedulePush()
 }
 
 async function doExport () {
@@ -129,6 +151,69 @@ async function doImport (file) {
   return false // 阻止 antd 默认上传
 }
 
+// Gitee 双向同步：拉取 -> 合并 -> 写入本地 -> 推送
+async function doSync () {
+  if (!isGiteeConfigured()) { message.error('Gitee 未配置，请检查 .env 文件'); return }
+  syncing.value = true
+  syncStatus.value = '正在拉取远程数据...'
+  try {
+    const local = await exportData()
+    const remote = await fetchFromGitee()
+    syncStatus.value = '正在合并...'
+    const merged = mergeData(local, remote?.data || null)
+    await importData(merged)
+    syncStatus.value = '正在推送...'
+    await pushToGitee(merged, remote?.sha)
+    await loadUsers()
+    await loadPayments()
+    message.success('同步完成')
+  } catch (e) {
+    message.error('同步失败：' + e.message)
+  } finally {
+    syncStatus.value = ''
+    syncing.value = false
+  }
+}
+
+// 仅从远程拉取（不推送）
+async function doPullOnly () {
+  if (!isGiteeConfigured()) { message.error('Gitee 未配置'); return }
+  syncing.value = true
+  syncStatus.value = '正在拉取远程数据...'
+  try {
+    const remote = await fetchFromGitee()
+    if (!remote) { message.warning('远程暂无数据'); return }
+    await importData(remote.data)
+    await loadUsers()
+    await loadPayments()
+    message.success('已拉取远程数据')
+  } catch (e) {
+    message.error('拉取失败：' + e.message)
+  } finally {
+    syncStatus.value = ''
+    syncing.value = false
+  }
+}
+
+// 仅推送到远程（不拉取）
+async function doPushOnly () {
+  if (!isGiteeConfigured()) { message.error('Gitee 未配置'); return }
+  syncing.value = true
+  syncStatus.value = '正在推送本地数据...'
+  try {
+    const local = await exportData()
+    const remote = await fetchFromGitee().catch(() => null)
+    syncStatus.value = '正在写入远程...'
+    await pushToGitee(local, remote?.sha)
+    message.success('已推送本地数据到远程')
+  } catch (e) {
+    message.error('推送失败：' + e.message)
+  } finally {
+    syncStatus.value = ''
+    syncing.value = false
+  }
+}
+
 onMounted(loadUsers)
 </script>
 
@@ -148,6 +233,8 @@ onMounted(loadUsers)
 .form-row { margin-bottom: var(--sp-3); }
 .form-row label { display: block; font-size: var(--fs-meta); color: var(--ink-soft); margin-bottom: var(--sp-2); }
 .hint { font-size: var(--fs-meta); color: var(--ink-soft); margin-bottom: var(--sp-4); line-height: 1.6; }
+.warn-text { color: var(--warn); }
+.sync-status { font-size: var(--fs-meta); color: var(--accent); margin-bottom: var(--sp-3); }
 .btn-group { display: flex; gap: var(--sp-3); }
 @media (max-width: 767px) {
   .settings-grid { grid-template-columns: 1fr; }
