@@ -24,7 +24,7 @@
       </div>
       <div v-if="recent.length === 0" class="empty">暂无还款记录</div>
       <div v-else>
-        <div v-for="p in recent" :key="p.id" class="recent-row">
+        <div v-for="p in recent" :key="p.id" class="recent-row clickable" @click="goPayments">
           <div class="row-left">
             <span class="row-date">{{ formatTimeShort(p) }}</span>
             <span class="row-note">{{ p.note || '-' }}</span>
@@ -49,6 +49,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
 import AppShell from '../components/AppShell.vue'
 import StatCard from '../components/StatCard.vue'
 import ProgressOverview from '../components/ProgressOverview.vue'
@@ -56,9 +57,12 @@ import PaymentModal from '../components/PaymentModal.vue'
 import { useRepay } from '../stores/repay.js'
 import { formatMoney, getSortTime, formatTimeShort } from '../utils/format.js'
 
-const { state, total, paid, remaining, progress, loadPayments, addPayment } = useRepay()
+const { state, total, paid, remaining, progress, syncAndLoad, addPayment } = useRepay()
+const router = useRouter()
 
 const modalOpen = ref(false)
+
+function goPayments () { router.push('/payments') }
 
 function openAdd () {
   modalOpen.value = true
@@ -93,11 +97,12 @@ const remainingTip = computed(() => {
 })
 
 // 最近 5 条（倒序）
+// 最近 5 条（倒序）
 const recent = computed(() => {
   return [...state.payments].sort((a, b) => getSortTime(b).localeCompare(getSortTime(a))).slice(0, 5)
 })
 
-onMounted(loadPayments)
+onMounted(syncAndLoad)
 </script>
 
 <style scoped>
@@ -127,6 +132,8 @@ onMounted(loadPayments)
   padding: var(--sp-3) 0; border-bottom: 1px solid var(--divider);
 }
 .recent-row:last-child { border-bottom: none; }
+.recent-row.clickable { cursor: pointer; transition: background 180ms var(--ease); }
+.recent-row.clickable:hover { background: rgba(255,255,255,0.45); }
 .row-left { display: flex; flex-direction: column; gap: 2px; }
 .row-date { font-size: var(--fs-meta); color: var(--accent); font-weight: 600; }
 .row-note { font-size: var(--fs-body); }

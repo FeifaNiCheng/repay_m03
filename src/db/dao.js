@@ -116,3 +116,13 @@ export async function importData (json) {
   })
   return { users: json.users.length, payments: json.payments.length }
 }
+
+// 物理清理：删除所有标记 deleted:true 的记录（不可恢复）
+export async function purgeDeletedPayments () {
+  const all = await db.payments.toArray()
+  const deletedIds = all.filter(p => p.deleted).map(p => p.id)
+  if (deletedIds.length > 0) {
+    await db.payments.bulkDelete(deletedIds)
+  }
+  return deletedIds.length
+}

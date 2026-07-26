@@ -1,10 +1,11 @@
 import { reactive, computed, ref } from 'vue'
 import * as dao from '../db/dao.js'
 import { useAuth } from './auth.js'
-import { schedulePush } from '../lib/autoSync.js'
+import { syncFromRemote, schedulePush } from '../lib/autoSync.js'
 
 // 总欠款固定
 export const TOTAL_DEBT = 73500
+let syncingPromise = null // 正在进行的同步 Promise，后续调用复用它
 
 const state = reactive({
   payments: [],
@@ -58,6 +59,17 @@ export function useRepay () {
     state.loading = false
   }
 
+  // 拉取 Gitee 远程数据合并到本地，再刷新内存
+  // 多次调用会复用同一次远程拉取，等它完成后统一刷新内存
+  async function syncAndLoad () {
+    if (!syncingPromise) {
+      syncingPromise = syncFromRemote().catch(() => {})
+    }
+    await syncingPromise
+    syncingPromise = null
+    await loadPayments()
+  }
+
   async function addPayment (data) {
     // 新增前快照进度，新增后判定是否跨过里程碑（仅新增触发，编辑/删除/进系统都不弹）
     const beforeProgress = progress.value
@@ -84,5 +96,5 @@ export function useRepay () {
     schedulePush()
   }
 
- return { state, total, paid, remaining, progress, loadPayments, addPayment, updatePayment, deletePayment }
+ return { state, total, paid, remaining, progress, loadPayments, syncAndLoad, addPayment, updatePayment, deletePayment }
 }

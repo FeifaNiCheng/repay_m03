@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watchEffect } from 'vue'
+import { ref, computed, onMounted, watchEffect, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import AppShell from '../components/AppShell.vue'
 import PaymentModal from '../components/PaymentModal.vue'
@@ -98,7 +98,7 @@ import BreathTip from '../components/BreathTip.vue'
 import { useRepay } from '../stores/repay.js'
 import { formatMoney, formatMonth, getMonthKey, getSortTime, formatTimeShort } from '../utils/format.js'
 
-const { state, remaining, loadPayments, addPayment, updatePayment, deletePayment } = useRepay()
+const { state, remaining, syncAndLoad, addPayment, updatePayment, deletePayment } = useRepay()
 
 const search = ref('')
 const monthFilter = ref(undefined)
@@ -157,6 +157,9 @@ watchEffect(() => {
   }
 })
 
+// 选择筛选月份时自动拉取最新数据（手机无刷新功能）
+watch(monthFilter, () => { syncAndLoad() })
+
 function toggleMonth (key) {
   const s = new Set(expandedMonths.value)
   if (s.has(key)) s.delete(key)
@@ -164,7 +167,13 @@ function toggleMonth (key) {
   expandedMonths.value = s
 }
 
-function toggleSort () { sortDesc.value = !sortDesc.value }
+function toggleSort () {
+  sortDesc.value = !sortDesc.value
+  // 切换排序后重置展开：只展开第一个分组
+  if (grouped.value.length > 0) {
+    expandedMonths.value = new Set([grouped.value[0].key])
+  }
+}
 
 // 一键全部展开/收缩
 const allExpanded = computed(() => grouped.value.length > 0 && grouped.value.every(g => expandedMonths.value.has(g.key)))
@@ -220,7 +229,7 @@ async function confirmRemove () {
   removeModalOpen.value = false
 }
 
-onMounted(loadPayments)
+onMounted(syncAndLoad)
 </script>
 
 <style scoped>

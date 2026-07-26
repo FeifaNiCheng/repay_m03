@@ -55,7 +55,8 @@
        <div class="btn-group">
          <a-button type="primary" :loading="syncing" @click="doSync">双向同步</a-button>
          <a-button :loading="syncing" @click="doPullOnly">仅拉取</a-button>
-          <a-button :loading="syncing" @click="doPushOnly">仅推送</a-button>
+         <a-button :loading="syncing" @click="doPushOnly">仅推送</a-button>
+         <a-button :loading="syncing" @click="doPurgeDeleted">清理已删记录</a-button>
        </div>
       </div>
     </div>
@@ -73,7 +74,7 @@ import { message } from 'ant-design-vue'
 import AppShell from '../components/AppShell.vue'
 import { useAuth } from '../stores/auth.js'
 import { useRepay } from '../stores/repay.js'
-import { getAllUsers, updateNickname, updatePassword, exportData, importData } from '../db/dao.js'
+import { getAllUsers, updateNickname, updatePassword, exportData, importData, purgeDeletedPayments } from '../db/dao.js'
 import { isGiteeConfigured, getGiteeConfig, fetchFromGitee, pushToGitee, mergeData } from '../lib/gitee.js'
 import { schedulePush } from '../lib/autoSync.js'
 
@@ -215,6 +216,27 @@ async function doPushOnly () {
 }
 
 onMounted(loadUsers)
+
+// 清理已删记录：物理删除本地 deleted:true 的记录，再推送覆盖远程
+async function doPurgeDeleted () {
+  if (!isGiteeConfigured()) { message.error("Gitee 未配置"); return }
+  syncing.value = true
+  syncStatus.value = "正在清理已删记录..."
+  try {
+    const count = await purgeDeletedPayments()
+    syncStatus.value = "正在推送清理后的数据..."
+    const local = await exportData()
+    const remote = await fetchFromGitee().catch(() => null)
+    await pushToGitee(local, remote?.sha)
+    await loadPayments()
+    message.success(count > 0 ? `已清理 ${count} 条已删记录并同步到远程` : "没有需要清理的记录，已同步远程")
+  } catch (e) {
+    message.error("清理失败：" + e.message)
+  } finally {
+    syncStatus.value = ""
+    syncing.value = false
+  }
+}
 </script>
 
 <style scoped>

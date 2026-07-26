@@ -1,13 +1,13 @@
-// 自动同步模块：页面加载时拉取，数据变更后防抖推送
+// 自动同步模块：页面加载时拉取，数据变更后立即推送
 import { fetchFromGitee, pushToGitee, mergeData, isGiteeConfigured } from './gitee.js'
 import { exportData, importData } from '../db/dao.js'
 
-let pushTimer = null
-const PUSH_DEBOUNCE = 4000 // 4 秒防抖
+let pushQueue = Promise.resolve() // 推送队列：串行执行，避免并发冲突
 
 // 页面加载时拉取远程数据并合并到本地
 // 不覆盖本地，而是合并：本地独有的保留，远程更新的覆盖
-export async function syncOnLoad () {
+// repay store 通过 syncingPromise 复用来避免并发重复请求
+export async function syncFromRemote () {
   if (!isGiteeConfigured()) return
   try {
     const local = await exportData()
@@ -23,13 +23,10 @@ export async function syncOnLoad () {
   }
 }
 
-// 数据变更后防抖推送
-// 多次快速操作只推送一次
+// 数据变更后立即推送（排队串行执行，避免并发冲突）
 export function schedulePush () {
   if (!isGiteeConfigured()) return
-  if (pushTimer) clearTimeout(pushTimer)
-  pushTimer = setTimeout(async () => {
-    pushTimer = null
+  pushQueue = pushQueue.then(async () => {
     try {
       const local = await exportData()
       // 先拿远程 sha（文件已存在时更新需要）
@@ -39,5 +36,5 @@ export function schedulePush () {
       // 推送失败不影响使用，静默处理
       console.warn('[autoSync] 推送失败:', e.message)
     }
-  }, PUSH_DEBOUNCE)
+  })
 }
