@@ -5,6 +5,4 @@ dist-ssr
 .DS_Store
 .idea
 *.log
-.env
-.env.*
 !.env.example
