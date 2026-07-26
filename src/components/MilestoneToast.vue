@@ -1,113 +1,73 @@
 <template>
-  <transition name="fade">
-    <div v-if="visible" class="milestone-overlay" @click="dismiss">
-      <div class="milestone-card anim-milestone">
-        <div class="milestone-icon">{{ emoji }}</div>
-        <div class="milestone-title">{{ title }}</div>
-        <div class="milestone-sub">{{ sub }}</div>
-      </div>
-      <div v-if="confetti" class="confetti-wrap">
-        <span v-for="i in 60" :key="i" class="confetti" :style="confettiStyle(i)"></span>
+  <Transition name="milestone">
+    <div v-if="visible" class="milestone-toast glass-strong anim-milestone" @click="dismiss">
+      <div class="ms-icon">{{ icon }}</div>
+      <div class="ms-body">
+        <div class="ms-title">{{ title }}</div>
+        <div class="ms-desc">{{ desc }}</div>
       </div>
     </div>
-  </transition>
+  </Transition>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
-import { milestoneSignal, useRepay } from '../stores/repay.js'
+import { formatMoney } from '../utils/format.js'
 
-// 仅监听 store 的里程碑信号：只在"新增还款记录"跨越节点时弹出
-// 进入系统、编辑、删除、导入等场景都不触发
-const { remaining } = useRepay()
+const props = defineProps({
+  progress: { type: Number, default: 0 },
+  remaining: { type: Number, default: 0 }
+})
 
 const visible = ref(false)
 const title = ref('')
-const sub = ref('')
-const emoji = ref('')
-const confetti = ref(false)
+const desc = ref('')
+const icon = ref('')
 
-// 信号变化时弹出对应里程碑文案
-watch(milestoneSignal, (sig) => {
-  if (!sig) return
-  showMilestone(sig.key)
-})
+// 里程碑定义：达到 25%/50%/75%/90%/100% 时弹出提醒
+const milestones = [
+  { threshold: 25, icon: '\U0001F331', title: '已还四分之一', desc: '开了个好头，稳住节奏' },
+  { threshold: 50, icon: '\U0001F525', title: '进度过半', desc: '下半场加速，胜利在望' },
+  { threshold: 75, icon: '\u26A1', title: '最后冲刺', desc: '只剩四分之一了，快到终点' },
+  { threshold: 90, icon: '\U0001F3AF', title: '九十达阵', desc: '只差最后一步，冲就完了' },
+  { threshold: 100, icon: '\U0001F389', title: '全部还清', desc: '恭喜！M03 完完全全属于你了' }
+]
 
-function showMilestone (key) {
-  switch (key) {
-    case '100':
-      trigger('🎉', '全部还清！', '你和对象的 M03 款项已结清', true)
-      break
-    case '10k':
-      trigger('🔥', '还剩不到一万！', `剩余 ¥${remaining.value.toFixed(0)}，胜利在望`, false)
-      break
-    case '75':
-      trigger('🌟', '已过 75%', '最后冲刺阶段', false)
-      break
-    case '50':
-      trigger('💪', '已还过半', '进度过半，继续加油', false)
-      break
-    case '25':
-      trigger('✨', '已还 25%', '开了个好头', false)
-      break
-    default:
-      break
+let lastShown = -1
+
+function check () {
+  const p = props.progress
+  for (let i = milestones.length - 1; i >= 0; i--) {
+    const m = milestones[i]
+    if (p >= m.threshold && i > lastShown) {
+      lastShown = i
+      title.value = m.title
+      desc.value = m.threshold >= 100 ? m.desc : m.desc + '，剩余 ¥' + formatMoney(props.remaining)
+      icon.value = m.icon
+      visible.value = true
+      setTimeout(function () { visible.value = false }, 5000)
+      return
+    }
   }
 }
 
-function trigger (em, t, s, gold) {
-  emoji.value = em
-  title.value = t
-  sub.value = s
-  confetti.value = gold
-  visible.value = true
-  if (gold) {
-    setTimeout(() => dismiss(), 3000)
-  } else {
-    setTimeout(() => dismiss(), 2000)
-  }
+function dismiss () {
+  visible.value = false
 }
 
-function dismiss () { visible.value = false }
-
-function confettiStyle (i) {
-  const left = Math.random() * 100
-  const delay = Math.random() * 0.5
-  const dur = 2 + Math.random()
-  const color = ['#FFD60A', '#34C759', '#0A84FF', '#FF9500'][i % 4]
-  return {
-    left: left + '%',
-    animationDelay: delay + 's',
-    animationDuration: dur + 's',
-    background: color
-  }
-}
+watch(function () { return props.progress }, check, { immediate: true })
 </script>
 
 <style scoped>
-.milestone-overlay {
-  position: fixed; inset: 0; z-index: 2000;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.2); backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+.milestone-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 22px; z-index: 1000; cursor: pointer; max-width: 90vw;
 }
-.milestone-card {
-  text-align: center; padding: 40px 56px;
-  background: var(--glass-strong); border-radius: var(--r-card);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
-}
-.milestone-icon { font-size: 48px; margin-bottom: 12px; }
-.milestone-title { font-size: 22px; font-weight: 700; color: var(--ink); }
-.milestone-sub { font-size: var(--fs-meta); color: var(--ink-soft); margin-top: 6px; }
-.confetti-wrap { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.confetti {
-  position: absolute; top: -10px; width: 8px; height: 8px; border-radius: 2px;
-  animation: fall linear forwards;
-}
-@keyframes fall {
-  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-}
-.fade-enter-active, .fade-leave-active { transition: opacity 200ms; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.ms-icon { font-size: 28px; line-height: 1; }
+.ms-title { font-size: 15px; font-weight: 600; }
+.ms-desc { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+.milestone-enter-active, .milestone-leave-active { transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1); }
+.milestone-enter-from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+.milestone-leave-to { opacity: 0; transform: translateX(-50%) translateY(20px); }
 </style>
