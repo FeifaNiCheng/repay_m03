@@ -1,7 +1,6 @@
 import { reactive, computed, ref } from 'vue'
 import * as dao from '../db/dao.js'
 import { useAuth } from './auth.js'
-import { schedulePush } from '../lib/autoSync.js'
 
 // 总欠款固定
 export const TOTAL_DEBT = 73500
@@ -64,7 +63,6 @@ export function useRepay () {
     const beforeRemaining = remaining.value
     await dao.addPayment({ ...data, createdBy: authState.username })
     await loadPayments()
-    schedulePush()
     const hit = checkMilestoneCrossing(beforeProgress, beforeRemaining, progress.value, remaining.value)
     if (hit) {
       signalSeq.value += 1
@@ -75,13 +73,11 @@ export function useRepay () {
   async function updatePayment (id, data) {
     await dao.updatePayment(id, data)
     await loadPayments()
-    schedulePush()
   }
 
   async function deletePayment (id) {
     await dao.deletePayment(id)
     await loadPayments()
-    schedulePush()
   }
 
  return { state, total, paid, remaining, progress, loadPayments, addPayment, updatePayment, deletePayment }

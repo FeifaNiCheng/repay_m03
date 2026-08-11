@@ -24,17 +24,18 @@ export function getMonthKey (dateStr) {
 }
 
 // 取排序用的精确时间戳：优先 createdAt（到秒/毫秒），回退到 date
-// 同一天多条记录靠 createdAt 区分先后，避免排序错乱
+// 主排序按还款日期 date，同一天内再用 createdAt 区分先后
+// 注意：不能只用 createdAt，否则历史合计等「date 早、createdAt 晚」的记录会被排到后面真实日期之前
 export function getSortTime (p) {
-  if (p.createdAt) return p.createdAt
-  // date 是 YYYY-MM-DD，补 T00:00:00 保证可比
-  return p.date ? p.date + 'T00:00:00' : ''
+  const date = p.date ? String(p.date).slice(0, 10) : '0000-00-00'
+  const created = p.createdAt || ''
+  return date + '|' + created
 }
 
-// 格式化时间用于明细展示：MM-DD HH:mm:ss（到秒）
-// 历史记录无 createdAt 时只显示日期 MM-DD
+// 格式化时间用于明细展示：YYYY-MM-DD HH:mm:ss（到秒，单行不换行）
+// 历史记录无 createdAt 时只显示 YYYY-MM-DD
 export function formatTimeShort (p) {
-  const datePart = p.date ? String(p.date).slice(5, 10) : '--'
+  const datePart = p.date ? String(p.date).slice(0, 10) : '----'
   if (!p.createdAt) return datePart
   const d = new Date(p.createdAt)
   if (isNaN(d.getTime())) return datePart

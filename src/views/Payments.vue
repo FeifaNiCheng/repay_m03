@@ -53,11 +53,9 @@
             </BreathTip>
             <span class="row-by">{{ p.createdBy }}</span>
           </div>
-          <div class="row-actions">
-            <button class="icon-btn" @click="openEdit(p)">✎</button>
-            <a-popconfirm title="确定删除？" @confirm="remove(p.id)">
-              <button class="icon-btn danger">✕</button>
-            </a-popconfirm>
+         <div class="row-actions">
+           <button class="icon-btn" @click="openEdit(p)">✎</button>
+            <button class="icon-btn danger" @click="askRemove(p)">✕</button>
           </div>
         </div>
         </div>
@@ -65,6 +63,21 @@
       </div>
       <div v-if="filtered.length === 0" class="empty glass">没有匹配的记录</div>
     </div>
+
+    <a-modal
+      v-model:open="removeModalOpen"
+      title="删除记录"
+      ok-text="删除"
+      cancel-text="取消"
+      :ok-button-props="{ danger: true }"
+      @ok="confirmRemove"
+    >
+      <p class="remove-tip">确定删除这条记录吗？</p>
+      <p class="remove-detail" v-if="pendingRemove">
+        {{ formatTimeShort(pendingRemove) }} · ¥{{ formatMoney(pendingRemove.amount) }}
+        <template v-if="pendingRemove.note"> · {{ pendingRemove.note }}</template>
+      </p>
+    </a-modal>
 
     <PaymentModal
       :open="modalOpen"
@@ -77,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watchEffect } from 'vue'
+import { ref, computed, onMounted, watchEffect, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import AppShell from '../components/AppShell.vue'
 import PaymentModal from '../components/PaymentModal.vue'
@@ -92,6 +105,8 @@ const monthFilter = ref(undefined)
 const sortDesc = ref(true)
 const modalOpen = ref(false)
 const editingRecord = ref(null)
+const removeModalOpen = ref(false)
+const pendingRemove = ref(null)
 // 展开的月份 key 集合
 const expandedMonths = ref(new Set())
 let initialized = false
@@ -142,6 +157,9 @@ watchEffect(() => {
   }
 })
 
+// 选择筛选月份时自动拉取最新数据（手机无刷新功能）
+watch(monthFilter, () => { loadPayments() })
+
 function toggleMonth (key) {
   const s = new Set(expandedMonths.value)
   if (s.has(key)) s.delete(key)
@@ -149,7 +167,13 @@ function toggleMonth (key) {
   expandedMonths.value = s
 }
 
-function toggleSort () { sortDesc.value = !sortDesc.value }
+function toggleSort () {
+  sortDesc.value = !sortDesc.value
+  // 切换排序后重置展开：只展开第一个分组
+  if (grouped.value.length > 0) {
+    expandedMonths.value = new Set([grouped.value[0].key])
+  }
+}
 
 // 一键全部展开/收缩
 const allExpanded = computed(() => grouped.value.length > 0 && grouped.value.every(g => expandedMonths.value.has(g.key)))
@@ -194,6 +218,16 @@ async function remove (id) {
     message.error('删除失败：' + e.message)
   }
 }
+function askRemove (p) {
+  pendingRemove.value = p
+  removeModalOpen.value = true
+}
+async function confirmRemove () {
+  if (!pendingRemove.value) return
+  await remove(pendingRemove.value.id)
+  pendingRemove.value = null
+  removeModalOpen.value = false
+}
 
 onMounted(loadPayments)
 </script>
@@ -236,7 +270,7 @@ onMounted(loadPayments)
   background: var(--warn); border-radius: 2px;
 }
 .row-main { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.row-date { font-size: var(--fs-meta); color: var(--ink-soft); }
+.row-date { font-size: var(--fs-meta); color: var(--ink-soft); white-space: nowrap; }
 .row-note { font-size: var(--fs-body); }
 .badge-history {
   font-size: 10px; padding: 1px 6px; border-radius: 9999px;
@@ -255,6 +289,8 @@ onMounted(loadPayments)
 .icon-btn:hover { background: var(--accent-soft); color: var(--accent); }
 .icon-btn.danger:hover { background: var(--warn-soft); color: var(--warn); }
 .empty { text-align: center; color: var(--ink-faint); padding: 32px; font-size: var(--fs-meta); }
+.remove-tip { font-size: var(--fs-body); }
+.remove-detail { font-size: var(--fs-meta); color: var(--ink-soft); margin-top: 8px; word-break: break-all; }
 @media (max-width: 767px) {
   .row-actions { opacity: 1; }
 }

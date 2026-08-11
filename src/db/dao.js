@@ -1,118 +1,76 @@
-import db from './database.js'
+import { query, execute } from './d1-client.js'
 
 // ===== 账户相关 =====
 
-// 初始化种子数据（仅在库为空时写入）
-export async function seedIfNeeded () {
-  const userCount = await db.users.count()
-  if (userCount === 0) {
-    await db.users.bulkAdd([
-      { username: 'admin', nickname: '管理员', password: 'admin123' },
-      { username: 'xrz', nickname: '仙人', password: 'admin123' },
-      { username: 'ds', nickname: '大帅', password: 'admin123' }
-    ])
-  }
-  const payCount = await db.payments.count()
-  if (payCount === 0) {
-    // 历史合计还款记录，操作人 admin
-    await db.payments.add({
-      date: '2025-08-01',
-      amount: 39500,
-      note: '历史合计 2025-08',
-      createdBy: 'admin',
-     createdAt: new Date().toISOString()
-    })
-  }
-}
-
 // 登录校验
 export async function login (username, password) {
-  const user = await db.users.get(username)
-  if (!user) return null
+  const rows = await query('SELECT username, nickname, password FROM users WHERE username = ?', [username])
+  if (rows.length === 0) return null
+  const user = rows[0]
   if (user.password !== password) return null
   return { username: user.username, nickname: user.nickname }
 }
 
 // 获取全部用户（设置页用）
 export async function getAllUsers () {
-  return db.users.toArray()
+  return query('SELECT username, nickname FROM users ORDER BY username')
 }
 
 // 修改昵称
 export async function updateNickname (username, nickname) {
-  await db.users.update(username, { nickname, updatedAt: new Date().toISOString() })
+  await execute('UPDATE users SET nickname = ? WHERE username = ?', [nickname, username])
 }
 
 // 修改密码
 export async function updatePassword (username, oldPassword, newPassword) {
-  const user = await db.users.get(username)
-  if (!user || user.password !== oldPassword) {
+  const rows = await query('SELECT password FROM users WHERE username = ?', [username])
+  if (rows.length === 0 || rows[0].password !== oldPassword) {
     return false
   }
- await db.users.update(username, { password: newPassword, updatedAt: new Date().toISOString() })
+  await execute('UPDATE users SET password = ? WHERE username = ?', [newPassword, username])
   return true
 }
 
 // ===== 还款记录相关 =====
 
 export async function getAllPayments () {
-  // 过滤掉软删除的记录
-  const all = await db.payments.orderBy('date').toArray()
-  return all.filter(p => !p.deleted)
+  return query(
+    'SELECT id, date, amount, note, created_by AS createdBy, created_at AS createdAt FROM payments ORDER BY date DESC, created_at DESC'
+  )
 }
 
 export async function addPayment (data) {
-  return db.payments.add({
-    date: data.date,
-    amount: data.amount,
-    note: data.note || '',
-    createdBy: data.createdBy,
-   createdAt: new Date().toISOString(),
-   updatedAt: new Date().toISOString()
-  })
+  const createdAt = new Date().toISOString()
+  const meta = await execute(
+    'INSERT INTO payments (date, amount, note, created_by, created_at) VALUES (?, ?, ?, ?, ?)',
+    [data.date, data.amount, data.note || '', data.createdBy, createdAt]
+  )
+  return { id: meta.last_row_id }
 }
 
 export async function updatePayment (id, data) {
-  await db.payments.update(id, {
-    date: data.date,
-    amount: data.amount,
-   note: data.note || '',
-   updatedAt: new Date().toISOString()
-  })
+  await execute(
+    'UPDATE payments SET date = ?, amount = ?, note = ? WHERE id = ?',
+    [data.date, data.amount, data.note || '', id]
+  )
 }
 
 export async function deletePayment (id) {
-  // 软删除：标记 deleted + updatedAt，同步时其他设备才能感知到删除
-  await db.payments.update(id, {
-    deleted: true,
-    updatedAt: new Date().toISOString()
-  })
+  await execute('DELETE FROM payments WHERE id = ?', [id])
 }
 
-// ===== 导入导出 =====
+// ===== 导出 =====
 
 export async function exportData () {
-  const users = await db.users.toArray()
-  const payments = await db.payments.toArray()
+  const users = await query('SELECT username, nickname FROM users ORDER BY username')
+  const payments = await query(
+    'SELECT id, date, amount, note, created_by AS createdBy, created_at AS createdAt FROM payments ORDER BY date, created_at'
+  )
   return {
     app: 'repay-m03',
     version: 1,
-   exportedAt: new Date().toISOString(),
+    exportedAt: new Date().toISOString(),
     users,
     payments
   }
-}
-
-// 导入：覆盖式写入，校验结构
-export async function importData (json) {
-  if (!json || json.app !== 'repay-m03' || !Array.isArray(json.users) || !Array.isArray(json.payments)) {
-    throw new Error('备份文件格式不正确')
-  }
-  await db.transaction('rw', db.users, db.payments, async () => {
-    await db.users.clear()
-    await db.payments.clear()
-   await db.users.bulkAdd(json.users)
-   await db.payments.bulkAdd(json.payments)
-  })
-  return { users: json.users.length, payments: json.payments.length }
 }

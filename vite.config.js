@@ -49,7 +49,15 @@ export default defineConfig({
     })
   ],
   server: {
+
     port: 5173,
-    host: true
+    host: true,
+    proxy: {
+      '/d1': {
+        target: 'https://api.cloudflare.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/d1/, '/client/v4')
+      }
+    }
   }
 })

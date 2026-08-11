@@ -1,0 +1,11 @@
+name = "m03"
+compatibility_date = "2026-07-27"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "db-d1"
+database_id = "a2380f83-219c-496e-aaf5-864ac7b9954d"
