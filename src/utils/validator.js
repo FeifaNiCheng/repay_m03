@@ -3,7 +3,7 @@ export function validateAmount (amount, remaining) {
   if (amount == null || amount === '') return '请输入金额'
   const num = Number(amount)
   if (isNaN(num)) return '金额必须是数字'
-  if (num <= 0) return '金额必须大于 0'
+  // if (num <= 0) return '金额必须大于 0'
   if (remaining != null && num > remaining) return '金额不能超过剩余欠款 ' + remaining.toFixed(2)
   return ''
 }
