@@ -10,11 +10,13 @@
   --ink-faint: #9A9AAB;
   --accent: #0A84FF;
   --accent-soft: rgba(10,132,255,0.12);
-  --success: #34C759;
-  --success-soft: rgba(52,199,89,0.14);
-  --warn: #FF9500;
-  --warn-soft: rgba(255,149,0,0.14);
-  --gold: #FFD60A;
+ --success: #34C759;
+ --success-soft: rgba(52,199,89,0.14);
+ --warn: #FF9500;
+ --warn-soft: rgba(255,149,0,0.14);
+ --danger: #FF3B30;
+ --danger-soft: rgba(255,59,48,0.14);
+ --gold: #FFD60A;
   --divider: rgba(0,0,0,0.06);
   --fs-display: 30px;
   --fs-title: 17px;

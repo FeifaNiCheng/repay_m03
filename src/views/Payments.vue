@@ -9,10 +9,14 @@
       >
         <template #prefix><span class="search-ico">🔍</span></template>
       </a-input>
-      <a-select v-model:value="monthFilter" style="width: 140px" placeholder="按月份筛选" allow-clear>
-        <a-select-option v-for="m in months" :key="m" :value="m">{{ formatMonth(m) }}</a-select-option>
-      </a-select>
-      <a-button @click="toggleSort" class="sort-btn">
+     <a-select v-model:value="monthFilter" style="width: 140px" placeholder="按月份筛选" allow-clear>
+       <a-select-option v-for="m in months" :key="m" :value="m">{{ formatMonth(m) }}</a-select-option>
+     </a-select>
+     <a-select v-model:value="typeFilter" style="width: 120px" placeholder="收支筛选" allow-clear>
+       <a-select-option value="income">存入</a-select-option>
+       <a-select-option value="expense">支出</a-select-option>
+     </a-select>
+     <a-button @click="toggleSort" class="sort-btn">
         {{ sortDesc ? '倒序 ↓' : '正序 ↑' }}
       </a-button>
       <div class="spacer"></div>
@@ -47,12 +51,13 @@
               <span v-if="p.note && p.note.includes('历史合计')" class="badge-history">历史</span>
             </span>
           </div>
-          <div class="row-amount-area">
-            <BreathTip :text="`${p.createdBy} 记录于 ${formatTimeShort(p)}`" placement="top">
-              <span class="row-amount num">¥{{ formatMoney(p.amount) }}</span>
-            </BreathTip>
-            <span class="row-by">{{ p.createdBy }}</span>
-          </div>
+         <div class="row-amount-area">
+           <BreathTip :text="`${p.createdBy} 记录于 ${formatTimeShort(p)}`" placement="top">
+             <span class="row-amount num" :class="{ 'amount-positive': p.amount > 0, 'amount-negative': p.amount < 0 }">¥{{ formatMoney(p.amount) }}</span>
+           </BreathTip>
+           <span class="row-tag" :class="p.amount < 0 ? 'tag-expense' : 'tag-income'">{{ p.amount < 0 ? '支出' : '存入' }}</span>
+           <span class="row-by">{{ p.createdBy }}</span>
+         </div>
          <div class="row-actions">
            <button class="icon-btn" @click="openEdit(p)">✎</button>
             <button class="icon-btn danger" @click="askRemove(p)">✕</button>
@@ -102,6 +107,7 @@ const { state, remaining, loadPayments, addPayment, updatePayment, deletePayment
 
 const search = ref('')
 const monthFilter = ref(undefined)
+const typeFilter = ref(undefined)
 const sortDesc = ref(true)
 const modalOpen = ref(false)
 const editingRecord = ref(null)
@@ -118,10 +124,15 @@ const filtered = computed(() => {
     const kw = search.value.trim().toLowerCase()
     list = list.filter(p => (p.note || '').toLowerCase().includes(kw))
   }
-  if (monthFilter.value) {
-    list = list.filter(p => getMonthKey(p.date) === monthFilter.value)
-  }
-  list.sort((a, b) => {
+ if (monthFilter.value) {
+   list = list.filter(p => getMonthKey(p.date) === monthFilter.value)
+ }
+ if (typeFilter.value === 'income') {
+   list = list.filter(p => Number(p.amount) > 0)
+ } else if (typeFilter.value === 'expense') {
+   list = list.filter(p => Number(p.amount) < 0)
+ }
+ list.sort((a, b) => {
     const ta = getSortTime(a), tb = getSortTime(b)
     return sortDesc.value ? tb.localeCompare(ta) : ta.localeCompare(tb)
   })
@@ -278,6 +289,11 @@ onMounted(loadPayments)
 }
 .row-amount-area { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-right: var(--sp-3); }
 .row-amount { font-size: var(--fs-title); font-weight: 600; color: var(--success); }
+.row-amount.amount-positive { color: var(--success); }
+.row-amount.amount-negative { color: var(--danger); }
+.row-tag { font-size: 10px; padding: 1px 6px; border-radius: 9999px; font-weight: 500; }
+.tag-income { background: var(--success-soft); color: var(--success); }
+.tag-expense { background: var(--danger-soft); color: var(--danger); }
 .row-by { font-size: var(--fs-label); color: var(--ink-faint); }
 .row-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 180ms var(--ease); }
 .pay-row:hover .row-actions { opacity: 1; }

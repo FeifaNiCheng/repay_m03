@@ -27,12 +27,13 @@
         <div v-for="p in recent" :key="p.id" class="recent-row clickable" @click="goPayments">
           <div class="row-left">
             <span class="row-date">{{ formatTimeShort(p) }}</span>
-            <span class="row-note">{{ p.note || '-' }}</span>
-          </div>
-          <div class="row-right">
-            <span class="row-amount num">¥{{ formatMoney(p.amount) }}</span>
-            <span class="row-by">{{ p.createdBy }}</span>
-          </div>
+          <span class="row-note">{{ p.note || '-' }}</span>
+         </div>
+         <div class="row-right">
+           <span class="row-amount num" :class="{ 'amount-positive': p.amount > 0, 'amount-negative': p.amount < 0 }">¥{{ formatMoney(p.amount) }}</span>
+           <span class="row-tag" :class="p.amount < 0 ? 'tag-expense' : 'tag-income'">{{ p.amount < 0 ? '支出' : '存入' }}</span>
+           <span class="row-by">{{ p.createdBy }}</span>
+         </div>
         </div>
       </div>
     </div>
@@ -139,6 +140,11 @@ onMounted(loadPayments)
 .row-note { font-size: var(--fs-body); }
 .row-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .row-amount { font-size: var(--fs-title); font-weight: 600; color: var(--success); }
+.row-amount.amount-positive { color: var(--success); }
+.row-amount.amount-negative { color: var(--danger); }
+.row-tag { font-size: 10px; padding: 1px 6px; border-radius: 9999px; font-weight: 500; }
+.tag-income { background: var(--success-soft); color: var(--success); }
+.tag-expense { background: var(--danger-soft); color: var(--danger); }
 .row-by { font-size: var(--fs-label); color: var(--ink-faint); }
 @media (max-width: 767px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
